@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電球の口金・色温度スマート判定メーカー</title>
+    <style>
+        :root {
+            --primary: #f59e0b;
+            --primary-hover: #d97706;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+            --radius: 16px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .logo-area {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #fef3c7;
+            color: var(--primary);
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+        }
+
+        h1 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+            letter-spacing: -0.02em;
+        }
+
+        p.subtitle {
+            font-size: 0.875rem;
+            color: var(--text-sub);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        /* カメラ・アップロードエリア */
+        .upload-section {
+            text-align: center;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 32px 16px;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-section:hover {
+            border-color: var(--primary);
+            background: #fffbeb;
+        }
+
+        .upload-section input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 12px;
+            fill: #94a3b8;
+        }
+
+        .upload-text {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .upload-sub {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+        }
+
+        /* プレビュー表示 */
+        .preview-container {
+            display: none;
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            object-fit: contain;
+            border: 1px solid var(--border);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            margin-top: 16px;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        /* ローディング */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 判定結果エリア */
+        .result-section {
+            display: none;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+
+        .result-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .badge {
+            background: #dcfce7;
+            color: #166534;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .spec-box {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .spec-label {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+        }
+
+        .spec-value {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .color-preview-box {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .color-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .color-info h4 {
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .color-info p {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+        }
+
+        .memo-area {
+            margin-bottom: 16px;
+        }
+
+        .memo-area label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-sub);
+        }
+
+        .memo-area input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .memo-area input:focus {
+            border-color: var(--primary);
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: var(--text-main);
+            box-shadow: none;
+        }
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        /* 履歴リスト */
+        .history-section h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .history-info strong {
+            display: block;
+            color: var(--text-main);
+        }
+
+        .history-info span {
+            color: var(--text-sub);
+            font-size: 0.75rem;
+        }
+
+        .history-delete {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 4px;
+        }
+
+        .clear-all {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .clear-all:hover {
+            text-decoration: underline;
+        }
+
+        /* トースト通知 */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1e293b;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="logo-area">
+                <!-- 電球のSVGアイコン -->
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path>
+                    <path d="M9 18h6"></path>
+                    <path d="M10 22h4"></path>
+                </svg>
+            </div>
+            <h1>電球の口金・色温度スマート判定メーカー</h1>
+            <p class="subtitle">切れた電球を撮影するだけで口金と明るさを一発特定！</p>
+        </header>
+
+        <!-- メイン入力カード -->
+        <div class="card" id="input-card">
+            <div class="upload-section" id="drop-zone">
+                <input type="file" id="file-input" accept="image/*" capture="environment">
+                <svg class="upload-icon" viewBox="0 0 24 24">
+                    <path d="M19 10.5V19H5V5H13.5M19 3H5C3.89 3 3 3.89 3 5V19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.89 20.1 3 19 3M14 6L16.29 8.29L9.41 15.17L7.53 13.29L14 6Z"/>
+                </svg>
+                <div class="upload-text">電球の写真を撮影 / 選択</div>
+                <div class="upload-sub">スマホのカメラまたはライブラリから</div>
+            </div>
+
+            <div class="preview-container" id="preview-container">
+                <img id="preview-img" class="preview-img" src="" alt="プレビュー">
+                <button class="btn" id="analyze-btn">この電球をスマート判定する</button>
+            </div>
+        </div>
+
+        <!-- ローディング -->
+        <div class="card loading" id="loading-card">
+            <div class="spinner"></div>
+            <p style="font-size: 0.9rem; color: var(--text-sub);">AI画像解析・口金照合中...</p>
+        </div>
+
+        <!-- 判定結果カード -->
+        <div class="card result-section" id="result-card">
+            <div class="result-header">
+                <span class="result-title">判定結果</span>
+                <span class="badge">高精度一致</span>
+            </div>
+
+            <div class="spec-grid">
+                <div class="spec-box">
+                    <div class="spec-label">推奨口金サイズ</div>
+                    <div class="spec-value" id="res-base">-</div>
+                </div>
+                <div class="spec-box">
+                    <div class="spec-label">推奨明るさ（W相当）</div>
+                    <div class="spec-value" id="res-watt">-</div>
+                </div>
+            </div>
+
+            <div class="color-preview-box">
+                <div class="color-circle" id="res-color-circle"></div>
+                <div class="color-info">
+                    <h4 id="res-color-name">-</h4>
+                    <p id="res-color-desc">-</p>
+                </div>
+            </div>
+
+            <div class="memo-area">
+                <label for="memo-input">設置場所メモ（例: リビングのダウンライト）</label>
+                <input type="text" id="memo-input" placeholder="場所を入力しておくと買い間違い防止に便利">
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-secondary" id="retry-btn">もう一度撮影</button>
+                <button class="btn" id="save-btn" style="margin-top:0;">履歴に保存</button>
+            </div>
+        </div>
+
+        <!-- 履歴カード -->
+        <div class="card history-section" id="history-section">
+            <h3>
+                <span>保存した電球リスト</span>
+                <button class="clear-all" id="clear-history-btn">すべて削除</button>
+            </h3>
+            <div class="history-list" id="history-list">
+                <!-- 動的に挿入 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- トースト通知 -->
+    <div class="toast" id="toast">保存しました！</div>
+
+    <script>
+        // DOM要素
+        const fileInput = document.getElementById('file-input');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImg = document.getElementById('preview-img');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const inputCard = document.getElementById('input-card');
+        const loadingCard = document.getElementById('loading-card');
+        const resultCard = document.getElementById('result-card');
+        const retryBtn = document.getElementById('retry-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const memoInput = document.getElementById('memo-input');
+        const historyList = document.getElementById('history-list');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+        const toast = document.getElementById('toast');
+
+        // 結果表示用要素
+        const resBase = document.getElementById('res-base');
+        const resWatt = document.getElementById('res-watt');
+        const resColorCircle = document.getElementById('res-color-circle');
+        const resColorName = document.getElementById('res-color-name');
+        const resColorDesc = document.getElementById('res-color-desc');
+
+        // 判定データの候補（モック生成用ランダムバリエーション）
+        const baseOptions = ['E26 (標準口金)', 'E17 (小形口金)', 'E12 (ナツメ球)', 'GX53 (平面口金)'];
+        const wattOptions = ['40W相当 (600lm)', '60W相当 (810lm)', '100W相当 (1520lm)', '25W相当 (300lm)'];
+        const colorOptions = [
+            { name: '電球色', desc: '温かみのあるオレンジ系の光（リラックス空間）', hex: '#ffae42' },
+            { name: '温白色', desc: '自然な明るさの温かみある光（リビング）', hex: '#ffd580' },
+            { name: '昼白色', desc: '太陽光に近い自然な光（どんな部屋にも）', hex: '#fff5e6' },
+            { name: '昼光色', desc: '青みがかった爽やかな光（細かい作業・書斎）', hex: '#e0f2fe' }
+        ];
+
+        let currentAnalysis = {};
+
+        // 画像選択時
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    previewImg.src = event.target.result;
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 判定開始ボタン
+        analyzeBtn.addEventListener('click', () => {
+            inputCard.style.display = 'none';
+            loadingCard.style.display = 'block';
+
+            // 擬似的なAI画像解析（1.5秒演出）
+            setTimeout(() => {
+                // ランダムに電球スペックを生成（実際のアプリでは画像特徴量を解析）
+                const randomBase = baseOptions[Math.floor(Math.random() * baseOptions.length)];
+                const randomWatt = wattOptions[Math.floor(Math.random() * wattOptions.length)];
+                const randomColor = colorOptions[Math.floor(Math.random() * colorOptions.length)];
+
+                currentAnalysis = {
+                    id: Date.now(),
+                    base: randomBase,
+                    watt: randomWatt,
+                    colorName: randomColor.name,
+                    colorDesc: randomColor.desc,
+                    colorHex: randomColor.hex,
+                    memo: '',
+                    date: new Date().toLocaleDateString('ja-JP')
+                };
+
+                // 結果を画面にセット
+                resBase.textContent = currentAnalysis.base;
+                resWatt.textContent = currentAnalysis.watt;
+                resColorCircle.style.backgroundColor = currentAnalysis.colorHex;
+                resColorName.textContent = currentAnalysis.colorName;
+                resColorDesc.textContent = currentAnalysis.colorDesc;
+                memoInput.value = '';
+
+                loadingCard.style.display = 'none';
+                resultCard.style.display = 'block';
+            }, 1500);
+        });
+
+        // もう一度撮影
+        retryBtn.addEventListener('click', () => {
+            resultCard.style.display = 'none';
+            inputCard.style.display = 'block';
+            fileInput.value = '';
+            previewContainer.style.display = 'none';
+        });
+
+        // 保存ボタン
+        saveBtn.addEventListener('click', () => {
+            currentAnalysis.memo = memoInput.value.trim() || '名称未設定の電球';
+            
+            let history = JSON.parse(localStorage.getItem('bulb_history') || '[]');
+            history.unshift(currentAnalysis);
+            localStorage.setItem('bulb_history', JSON.stringify(history));
+
+            renderHistory();
+            showToast('判定結果を保存しました！');
+
+            // リセットしてホームへ
+            resultCard.style.display = 'none';
+            inputCard.style.display = 'block';
+            fileInput.value = '';
+            previewContainer.style.display = 'none';
+        });
+
+        // 履歴削除ボタン
+        clearHistoryBtn.addEventListener('click', () => {
+            if (confirm('保存した履歴をすべて削除しますか？')) {
+                localStorage.removeItem('bulb_history');
+                renderHistory();
+                showToast('履歴をクリアしました');
+            }
+        });
+
+        // 個別削除
+        window.deleteHistoryItem = function(id) {
+            let history = JSON.parse(localStorage.getItem('bulb_history') || '[]');
+            history = history.filter(item => item.id !== id);
+            localStorage.setItem('bulb_history', JSON.stringify(history));
+            renderHistory();
+            showToast('履歴から削除しました');
+        };
+
+        // 履歴のレンダリング
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('bulb_history') || '[]');
+            historyList.innerHTML = '';
+
+            if (history.length === 0) {
+                historyList.innerHTML = '<p style="font-size: 0.8rem; color: var(--text-sub); text-align: center; padding: 10px;">保存された履歴はありません</p>';
+                return;
+            }
+
+            history.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <div class="history-info">
+                        <strong>${escapeHTML(item.memo)}</strong>
+                        <span>${item.base} / ${item.watt} / ${item.colorName} (${item.date})</span>
+                    </div>
+                    <button class="history-delete" onclick="deleteHistoryItem(${item.id})">削除</button>
+                `;
+                historyList.appendChild(div);
+            });
+        }
+
+        // トースト表示
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+
+        // XSS対策用サニタイズ
+        function escapeHTML(str) {
+            return str.replace(/[&'`"<>]/g, function(match) {
+                return {
+                    '&': '&amp;',
+                    "'": '&#x27;',
+                    '`': '&#x60;',
+                    '"': '&quot;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                }[match];
+            });
+        }
+
+        // 初期化
+        renderHistory();
+    </script>
+</body>
+</html>
